@@ -14,7 +14,7 @@ import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
 from matplotlib import cm
 import matplotlib
-import helpers_202510 as helpers
+import helpers
 import phantoms
 matplotlib.use('Qt5Agg')
 plt.rcParams.update({'font.size': 24})
@@ -160,6 +160,9 @@ def calc_overall_error(skin, freq, phantom_params):
     pha.calc_kz(kxn, k0_air)
     r_te_pha, APD_te_pha, r_tm_pha, APD_tm_pha = get_APD_pha(pha)
 
+    skin.calc_k0(omega)
+    skin.calc_kz(kxn, k0_air)
+    r_te_skin, APD_te_skin, r_tm_skin, APD_tm_skin = get_APD_skin(skin)
     #print(f'Skin parameters: eps_r {skin.epsr_3:.2f} and sigma {skin.sigma_3:.2f}')
 
     APD_te_pha_norm = np.array([APD_te_pha[i,:]*Z_air[i] for i in range(len(Z_air))])
@@ -169,9 +172,6 @@ def calc_overall_error(skin, freq, phantom_params):
 
     e_rpd_te = calc_error_rpd(APD_te_skin_norm, APD_te_pha_norm)
     e_rpd_tm = calc_error_rpd(APD_tm_skin_norm, APD_tm_pha_norm)
-
-    e_apd_te = calc_error_apd(APD_te_skin_norm, APD_te_pha_norm)
-    e_apd_tm = calc_error_apd(APD_tm_skin_norm, APD_tm_pha_norm)
     
     return e_rpd_te, e_rpd_tm, APD_te_pha_norm, APD_tm_pha_norm
 
@@ -204,11 +204,14 @@ def get_pn_unc(skin, freq, phantom_params_, dev):
 
 delta_T = 2 # max temperature change [°C] 
 
+#pha = phantoms.PHA10_18G()
+#pha = phantoms.PHA18_24G()
 pha = phantoms.PHA24_30G_V2()
+#pha = phantoms.PHA30_45G()
 
 omega = 2 * np.pi * pha.freq
 
-kxn = np.linspace(0, 2, num=200)
+kxn = np.arange(0, 2.01, 0.01)
 k0_air = helpers.get_k0(omega, 1., 0.)
 kx = np.zeros((len(k0_air), len(kxn)), dtype=np.complex128)
 for ik, k in enumerate(k0_air):
@@ -221,9 +224,6 @@ epsc_air = helpers.get_epsr_complex(epsr_0, sigma_0, omega) * epsilon_0
 Z_air = np.abs(np.sqrt(mu_0/epsc_air))
 
 skin = helpers.Skin_2std(pha.freq)
-skin.calc_k0(omega)
-skin.calc_kz(kxn, k0_air)
-r_te_skin, APD_te_skin, r_tm_skin, APD_tm_skin = get_APD_skin(skin)
 
 phantom_params = [
                     pha.epsr_epoxy, # 0
@@ -261,10 +261,18 @@ contributor = [
                 'lamination_upper_sigma',
                 'shell_sigma', 
                 'ssl_sigma',
+                'lamination_lower_epsr_measurement',
+                'lamination_lower_sigma_measurement',
+                'foam_epsr_measurement',
+                'foam_sigma_measurement',
+                'lamination_upper_epsr_measurement',
+                'lamination_upper_sigma_measurement',
+                'shell_epsr_measurement',
+                'shell_sigma_measurement',
                 'ssl_epsr_measurement',
                 'ssl_sigma_measurement',
-                'ssl_epsr_temperature',
-                'ssl_sigma_temperature',
+                #'ssl_epsr_temperature',
+                #'ssl_sigma_temperature',
                 ]
 
 unc_n = np.zeros((len(contributor), 2))
@@ -303,6 +311,22 @@ for i, c in enumerate(contributor):
         vec_dev[12] = 20.
     if c == 'shell_thickness':
         vec_dev[13] = 5.
+    if c == 'lamination_lower_epsr_measurement':
+        vec_dev[0] = 3. # tbf
+    if c == 'lamination_lower_sigma_measurement':
+        vec_dev[5] = 3. # tbf
+    if c == 'foam_epsr_measurement':
+        vec_dev[1] = 3. # tbf
+    if c == 'foam_sigma_measurement':
+        vec_dev[6] = 3. # tbf
+    if c == 'lamination_upper_epsr_measurement':
+        vec_dev[2] = 3. # tbf
+    if c == 'lamination_upper_sigma_measurement':
+        vec_dev[7] = 3. # tbf
+    if c == 'shell_epsr_measurement':
+        vec_dev[3] = 3. # tbf
+    if c == 'shell_sigma_measurement':
+        vec_dev[8] = 3. # tbf
     if c == 'ssl_epsr_measurement':
         vec_dev[4] = 3.2
     if c == 'ssl_sigma_measurement':
@@ -317,16 +341,16 @@ for i, c in enumerate(contributor):
 unc = np.vstack((np.maximum(unc_n, unc_p), np.array([unc_skin_te, unc_skin_tm])))
 
 contributor_combined = [
+                'skin_emulation',
                 'ssl_epsr',
                 'ssl_sigma',
-                'ssl_epsr_measurement',
-                'ssl_sigma_measurement',
+                'composite_shell_epsr',
+                'composite_shell_sigma',
+                'epsr_measurement',
+                'sigma_measurement',
                 'ssl_epsr_temperature',
                 'ssl_sigma_temperature',
-                'composite_shell_epsr',
                 'composite_shell_thickness',
-                'skin_emulation',
-                'composite_shell_sigma',
                 ]
 unc_combined = np.zeros((len(contributor_combined), 2))
 for i, c in enumerate(contributor_combined):
@@ -346,6 +370,20 @@ for i, c in enumerate(contributor_combined):
             index3 = contributor.index('lamination_upper_epsr')
             index4 = contributor.index('shell_epsr')
             unc_combined[i,:] = np.sqrt(unc[index1,:]**2 + unc[index2,:]**2 + unc[index3,:]**2 + unc[index4,:]**2)
+        if c == 'epsr_measurement':
+            index1 = contributor.index('lamination_lower_epsr_measurement')
+            index2 = contributor.index('foam_epsr_measurement')
+            index3 = contributor.index('lamination_upper_epsr_measurement')
+            index4 = contributor.index('shell_epsr_measurement')
+            index5 = contributor.index('ssl_epsr_measurement')
+            unc_combined[i,:] = np.sqrt(unc[index1,:]**2 + unc[index2,:]**2 + unc[index3,:]**2 + unc[index4,:]**2 + unc[index5,:]**2)
+        if c == 'sigma_measurement':
+            index1 = contributor.index('lamination_lower_sigma_measurement')
+            index2 = contributor.index('foam_sigma_measurement')
+            index3 = contributor.index('lamination_upper_sigma_measurement')
+            index4 = contributor.index('shell_sigma_measurement')
+            index5 = contributor.index('ssl_sigma_measurement')
+            unc_combined[i,:] = np.sqrt(unc[index1,:]**2 + unc[index2,:]**2 + unc[index3,:]**2 + unc[index4,:]**2 + unc[index5,:]**2)
         if c == 'composite_shell_sigma':
             index1 = contributor.index('lamination_lower_sigma')
             index2 = contributor.index('foam_sigma')
@@ -362,7 +400,7 @@ data = {
         }
 
 df = pd.DataFrame(data)
-
+df.to_excel(f'tables/{pha.name}.xlsx')
 
 
 
