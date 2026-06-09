@@ -16,6 +16,7 @@ from matplotlib import cm
 import matplotlib
 import helpers
 import phantoms
+import config
 matplotlib.use('Qt5Agg')
 plt.rcParams.update({'font.size': 24})
 
@@ -141,8 +142,8 @@ def plot_2(x1, y1, E1, x2, y2, E2,
     cticks = np.linspace(vmin, vmax, ncticks)
     cbar.set_ticks(cticks)
     cbar.set_label(cbar_label, labelpad=15)
-    plt.savefig(f'plots/broadband/{filename}.svg', transparent=True)
-    plt.savefig(f'plots/broadband/{filename}.pdf', transparent=True)
+    plt.savefig(config.OUTPUT_PLOTS_DIR / f'broadband/{filename}.svg', transparent=True)
+    plt.savefig(config.OUTPUT_PLOTS_DIR / f'broadband/{filename}.pdf', transparent=True)
     
     
 def plot_4(x1, y1, E1, x2, y2, E2, x3, y3, E3, x4, y4, E4, vmin=0., vmax=1., title=None, cbar_label=None, cmap=cm.CMRmap, filename=None):
@@ -164,7 +165,7 @@ def plot_4(x1, y1, E1, x2, y2, E2, x3, y3, E3, x4, y4, E4, vmin=0., vmax=1., tit
     cticks = np.linspace(vmin, vmax, 6)
     cbar.set_ticks(cticks)
     cbar.set_label(cbar_label, labelpad=15)
-    plt.savefig(f'plots/broadband/{filename}.svg', transparent=True)
+    plt.savefig(config.OUTPUT_PLOTS_DIR / f'broadband/{filename}.svg', transparent=True)
     
     
 def plot_contourf(X, Y, E, ax, title, vmin, vmax, num_levels=51, cmap=cm.CMRmap):
@@ -272,16 +273,3 @@ plot_2(kxn[:N_slices], pha.freq*1e-9, e_windowed_te, kxn[:N_slices], pha.freq*1e
        filename='e_win_RPD'
        )
 '''
-
-
-
-
-
-
-
-
-
-
-
-
-
