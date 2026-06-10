@@ -28,6 +28,9 @@ class SSL10_18G:
     alpha_3 = 0.00
     alpha_4 = 0.00
     
+    epsr_Tgrad = 1.00
+    sigma_Tgrad = 3.05
+    
 
 class SSL18_24G:
     filename = 'SSL18-24G'
@@ -48,6 +51,9 @@ class SSL18_24G:
     alpha_2 = 0.48
     alpha_3 = 0.00
     alpha_4 = 0.00
+    
+    epsr_Tgrad = 1.00
+    sigma_Tgrad = 3.05
     
 
 class SSL24_30G:
@@ -70,6 +76,9 @@ class SSL24_30G:
     alpha_3 = 0.00
     alpha_4 = 0.00 
     
+    epsr_Tgrad = 0.88
+    sigma_Tgrad = 2.37
+    
     
 class SSL24_30GV2:
     filename = 'SSL24-30GV2'
@@ -91,6 +100,9 @@ class SSL24_30GV2:
     alpha_3 = 0.00
     alpha_4 = 0.00 
     
+    epsr_Tgrad = 0.88
+    sigma_Tgrad = 2.37
+    
     
 class SSL30_45G:
     filename = 'SSL30-45G'
@@ -111,6 +123,9 @@ class SSL30_45G:
     alpha_2 = 0.62
     alpha_3 = 0.00
     alpha_4 = 0.00
+    
+    epsr_Tgrad = 0.85
+    sigma_Tgrad = 3.13
     
  
 class PHA10_18G:

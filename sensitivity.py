@@ -6,19 +6,43 @@ Created on Tue Jun 17 10:18:49 2025
 """
 import numpy as np
 import pandas as pd
+import sys
 from scipy.constants import c, epsilon_0, mu_0
 from scipy.optimize import minimize
+import config
+import matplotlib
+
+if "matplotlib.pyplot" not in sys.modules:
+    matplotlib.use(config.MATPLOTLIB_BACKEND)
 import matplotlib.pyplot as plt
 import matplotlib.colors as mc
 import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
 from matplotlib import cm
-import matplotlib
 import helpers
 import phantoms
-import config
-matplotlib.use('Qt5Agg')
-plt.rcParams.update({'font.size': 24})
+
+plt.rcParams.update({
+    'font.size': config.FONT_SIZE,
+    'savefig.transparent': getattr(config, 'PLOT_TRANSPARENT', True),
+})
+
+
+def save_plot(fig, filename, output_dir=None):
+    if output_dir is None:
+        output_dir = config.OUTPUT_PLOTS_DIR / 'broadband'
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    plot_formats = getattr(config, 'PLOT_FORMATS', ['svg', 'pdf'])
+    if isinstance(plot_formats, str):
+        plot_formats = [plot_formats]
+
+    for plot_format in plot_formats:
+        fig.savefig(
+            output_dir / f'{filename}.{plot_format}',
+            transparent=getattr(config, 'PLOT_TRANSPARENT', True),
+        )
+    plt.close(fig)
 
 
 # Calculates APD on SC layer
@@ -59,7 +83,7 @@ def plot_2(x1, y1, E1, x2, y2, E2,
            title=None, 
            cbar_label=None, cmap=cm.CMRmap, ncticks=9,
            filename=None):
-    fig, ax = plt.subplots(nrows=1,ncols=2, figsize=(16,9),
+    fig, ax = plt.subplots(nrows=1,ncols=2, figsize=getattr(config, 'FIGURE_SIZE_DEFAULT', (16, 9)),
                            )
     #fig.suptitle(title, y=0.83, fontsize=22)
     #fig.subplots_adjust(wspace=0.3)
@@ -74,11 +98,11 @@ def plot_2(x1, y1, E1, x2, y2, E2,
     cticks = np.linspace(vmin, vmax, ncticks)
     cbar.set_ticks(cticks)
     cbar.set_label(cbar_label, labelpad=15)
-    plt.savefig(config.OUTPUT_PLOTS_DIR / f'broadband/{pha.name}.png', dpi=300, transparent=True)
+    save_plot(fig, filename or pha.name)
     
     
 def plot_4(x1, y1, E1, x2, y2, E2, x3, y3, E3, x4, y4, E4, vmin=0., vmax=1., title=None, cbar_label=None, cmap=cm.CMRmap, filename=None):
-    fig, ax = plt.subplots(nrows=2,ncols=2, figsize=(16,9),
+    fig, ax = plt.subplots(nrows=2,ncols=2, figsize=getattr(config, 'FIGURE_SIZE_DEFAULT', (16, 9)),
                            )
     #fig.suptitle(title, y=0.83, fontsize=22)
     #fig.subplots_adjust(wspace=0.3)
@@ -96,7 +120,7 @@ def plot_4(x1, y1, E1, x2, y2, E2, x3, y3, E3, x4, y4, E4, vmin=0., vmax=1., tit
     cticks = np.linspace(vmin, vmax, 6)
     cbar.set_ticks(cticks)
     cbar.set_label(cbar_label, labelpad=15)
-    plt.savefig(config.OUTPUT_PLOTS_DIR / f'broadband/{pha.name}.png', dpi=300, transparent=True)
+    save_plot(fig, filename or pha.name)
     
     
 def plot_contourf(X, Y, E, ax, title, vmin, vmax, num_levels=51, cmap=cm.CMRmap):
@@ -194,7 +218,7 @@ def get_unc(skin, freq, phantom_params_):
            filename='e_RPD'
            )
     '''
-    return np.array([np.amax(np.abs(diff_te)), np.amax(np.abs(diff_tm))])
+    return np.array([np.nanmax(np.abs(diff_te)), np.nanmax(np.abs(diff_tm))])
 
 
 def get_pn_unc(skin, freq, phantom_params_, dev):
@@ -203,13 +227,12 @@ def get_pn_unc(skin, freq, phantom_params_, dev):
     return unc_n, unc_p
 
 
+
+
+if "pha" not in globals():
+    pha = phantoms.PHA24_30G_V2()
+
 delta_T = 2 # max temperature change [°C] 
-
-#pha = phantoms.PHA10_18G()
-#pha = phantoms.PHA18_24G()
-pha = phantoms.PHA24_30G_V2()
-#pha = phantoms.PHA30_45G()
-
 omega = 2 * np.pi * pha.freq
 
 kxn = np.arange(0, 2.01, 0.01)
@@ -272,8 +295,8 @@ contributor = [
                 'shell_sigma_measurement',
                 'ssl_epsr_measurement',
                 'ssl_sigma_measurement',
-                #'ssl_epsr_temperature',
-                #'ssl_sigma_temperature',
+                'ssl_epsr_temperature',
+                'ssl_sigma_temperature',
                 ]
 
 unc_n = np.zeros((len(contributor), 2))
@@ -313,29 +336,29 @@ for i, c in enumerate(contributor):
     if c == 'shell_thickness':
         vec_dev[13] = 5.
     if c == 'lamination_lower_epsr_measurement':
-        vec_dev[0] = 3. # tbf
+        vec_dev[0] = 1.
     if c == 'lamination_lower_sigma_measurement':
-        vec_dev[5] = 3. # tbf
+        vec_dev[5] = 1.
     if c == 'foam_epsr_measurement':
-        vec_dev[1] = 3. # tbf
+        vec_dev[1] = 1.
     if c == 'foam_sigma_measurement':
-        vec_dev[6] = 3. # tbf
+        vec_dev[6] = 1.
     if c == 'lamination_upper_epsr_measurement':
-        vec_dev[2] = 3. # tbf
+        vec_dev[2] = 1.
     if c == 'lamination_upper_sigma_measurement':
-        vec_dev[7] = 3. # tbf
+        vec_dev[7] = 1.
     if c == 'shell_epsr_measurement':
-        vec_dev[3] = 3. # tbf
+        vec_dev[3] = 1.
     if c == 'shell_sigma_measurement':
-        vec_dev[8] = 3. # tbf
+        vec_dev[8] = 1.
     if c == 'ssl_epsr_measurement':
         vec_dev[4] = 3.2
     if c == 'ssl_sigma_measurement':
         vec_dev[9] = 5.2
     if c == 'ssl_epsr_temperature':
-        vec_dev[4] = pha.ssl_epsr_Tgrad * delta_T
+        vec_dev[4] = pha.ssl.epsr_Tgrad * delta_T
     if c == 'ssl_sigma_temperature':
-        vec_dev[9] = pha.ssl_sigma_Tgrad * delta_T
+        vec_dev[9] = pha.ssl.sigma_Tgrad * delta_T
     unc_n[i,:], unc_p[i,:] = get_pn_unc(skin, pha.freq, phantom_params, vec_dev)
 
 #unc = np.maximum(unc_n, unc_p)

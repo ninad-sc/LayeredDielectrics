@@ -25,10 +25,9 @@ OUTPUT_TABLES_DIR.mkdir(parents=True, exist_ok=True)
 # ============================================================================
 
 # Backend: 'Agg' for non-interactive, 'Qt5Agg' for interactive display
-MATPLOTLIB_BACKEND = "Agg"
+MATPLOTLIB_BACKEND = "Qt5Agg"
 
 # Figure settings
-FIGURE_DPI = 300
 FIGURE_SIZE_DEFAULT = (16, 9)
 FONT_SIZE = 24
 
@@ -40,8 +39,7 @@ FONT_SIZE = 24
 FREQ_RESOLUTION = 0.25e9  # 250 MHz
 
 # Spatial angle sampling for APD calculations
-KXN_LINSPACE = (0, 2, 200)  # (start, stop, num_points)
-KXN_ARANGE = (0, 2.01, 0.01)  # (start, stop, step) - more detailed
+KXN_ARANGE = (0, 2.01, 0.01)  # (start, stop, step)
 
 # Temperature-related parameters
 DELTA_T_DEFAULT = 2  # Maximum temperature change [°C]
@@ -67,7 +65,7 @@ UNCERTAINTY_PERCENTAGES = {
 # ============================================================================
 
 # Plot file formats
-PLOT_FORMATS = ["svg", "pdf", "png"]
+PLOT_FORMATS = ["svg", "pdf"]
 
 # Plot transparency
 PLOT_TRANSPARENT = True

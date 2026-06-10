@@ -7,19 +7,24 @@ Created on Thu Jan 30 09:30:24 2025
 """
 
 import numpy as np
+import sys
 from scipy.constants import c, epsilon_0, mu_0
 from scipy.optimize import minimize
+import matplotlib
+import config
+
+if "matplotlib.pyplot" not in sys.modules:
+    matplotlib.use(config.MATPLOTLIB_BACKEND)
 import matplotlib.pyplot as plt
 import matplotlib.colors as mc
 import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
 from matplotlib import cm
-import matplotlib
-import config
 
-# Configure matplotlib backend from config
-matplotlib.use(config.MATPLOTLIB_BACKEND)
-plt.rcParams.update({'font.size': config.FONT_SIZE})
+plt.rcParams.update({
+    'font.size': config.FONT_SIZE,
+    'savefig.transparent': getattr(config, 'PLOT_TRANSPARENT', True),
+})
 
 
 # ============================================================================

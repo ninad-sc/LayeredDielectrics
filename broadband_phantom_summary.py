@@ -6,18 +6,26 @@ Created on Tue Jun 17 10:18:49 2025
 """
 import numpy as np
 import pandas as pd
+import sys
 from scipy.constants import c, epsilon_0, mu_0
 from scipy.optimize import minimize
+import config
+import matplotlib
+
+if "matplotlib.pyplot" not in sys.modules:
+    matplotlib.use(config.MATPLOTLIB_BACKEND)
 import matplotlib.pyplot as plt
 import matplotlib.colors as mc
 import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
 from matplotlib import cm
-import matplotlib
 import helpers
 import phantoms
-matplotlib.use('Qt5Agg')
-plt.rcParams.update({'font.size': 24})
+
+plt.rcParams.update({
+    'font.size': config.FONT_SIZE,
+    'savefig.transparent': getattr(config, 'PLOT_TRANSPARENT', True),
+})
 
 
 # Calculates APD on SC layer
@@ -52,12 +60,21 @@ def get_APD_pha(material):
     
     return r_te, APD_te, r_tm, APD_tm   
 
-#pha = phantoms.PHA10_18G()
-#pha = phantoms.PHA18_24G()
-pha = phantoms.PHA24_30G_V2()
-#pha = phantoms.PHA30_45G()
-#pha = phantoms.PHAmmW45_70G()
-#pha = phantoms.PHAmmW70_110G()
+if "pha" not in globals():
+    pha = phantoms.PHA24_30G_V2()
+
+
+def save_plot(fig, filename):
+    plot_formats = getattr(config, 'PLOT_FORMATS', ['svg', 'pdf'])
+    if isinstance(plot_formats, str):
+        plot_formats = [plot_formats]
+
+    for plot_format in plot_formats:
+        fig.savefig(
+            config.OUTPUT_PLOTS_DIR / f'{filename}.{plot_format}',
+            transparent=getattr(config, 'PLOT_TRANSPARENT', True),
+        )
+    plt.close(fig)
 
 # %%
 fmin_index = np.searchsorted(pha.freq, pha.fmin*1e9)
@@ -126,7 +143,7 @@ def plot_2(x1, y1, E1, x2, y2, E2,
            title=None, 
            cbar_label=None, cmap=cm.CMRmap, ncticks=9,
            filename=None):
-    fig, ax = plt.subplots(nrows=1,ncols=2, figsize=(16,9),
+    fig, ax = plt.subplots(nrows=1,ncols=2, figsize=getattr(config, 'FIGURE_SIZE_DEFAULT', (16, 9)),
                            )
     #fig.suptitle(title, y=0.83, fontsize=22)
     #fig.subplots_adjust(wspace=0.3)
@@ -137,16 +154,15 @@ def plot_2(x1, y1, E1, x2, y2, E2,
     ax[1].set(xlabel='$k_{xn}$')
  
     plt.tight_layout()
-    cbar = fig.colorbar(cs3, shrink=0.65, ax=ax)
+    cbar = fig.colorbar(cs3, ax=ax)
     cticks = np.linspace(vmin, vmax, ncticks)
     cbar.set_ticks(cticks)
     cbar.set_label(cbar_label, labelpad=15)
-    plt.savefig(f'plots/broadband/{filename}.svg', transparent=True)
-    plt.savefig(f'plots/broadband/{filename}.pdf', transparent=True)
+    save_plot(fig, filename)
     
     
 def plot_4(x1, y1, E1, x2, y2, E2, x3, y3, E3, x4, y4, E4, vmin=0., vmax=1., title=None, cbar_label=None, cmap=cm.CMRmap, filename=None):
-    fig, ax = plt.subplots(nrows=2,ncols=2, figsize=(16,9),
+    fig, ax = plt.subplots(nrows=2,ncols=2, figsize=getattr(config, 'FIGURE_SIZE_DEFAULT', (16, 9)),
                            )
     #fig.suptitle(title, y=0.83, fontsize=22)
     #fig.subplots_adjust(wspace=0.3)
@@ -160,11 +176,11 @@ def plot_4(x1, y1, E1, x2, y2, E2, x3, y3, E3, x4, y4, E4, vmin=0., vmax=1., tit
     ax[1][1].set(xlabel='$k_{xn}$')
 
     plt.tight_layout()
-    cbar = fig.colorbar(cs3, shrink=0.65, ax=ax)
+    cbar = fig.colorbar(cs3, ax=ax)
     cticks = np.linspace(vmin, vmax, 6)
     cbar.set_ticks(cticks)
     cbar.set_label(cbar_label, labelpad=15)
-    plt.savefig(f'plots/broadband/{filename}.svg', transparent=True)
+    save_plot(fig, filename)
     
     
 def plot_contourf(X, Y, E, ax, title, vmin, vmax, num_levels=51, cmap=cm.CMRmap):
@@ -209,7 +225,7 @@ plot_4(kxn, pha.freq*1e-9, np.abs(r_te_pha),
        kxn, pha.freq*1e-9, np.abs(r_tm_pha),
        kxn, pha.freq*1e-9, np.abs(r_te_skin), 
        kxn, pha.freq*1e-9, np.abs(r_tm_skin), 
-       cbar_label='|$\Gamma$|',
+       cbar_label='|$\\Gamma$|',
        filename='r')
 '''
 
@@ -252,26 +268,7 @@ plot_2(kxn, pha.freq*1e-9, e_rpd_te, kxn, pha.freq*1e-9, e_rpd_tm,
        ncticks=7,
        filename=f'e_RPD_{pha.name}'
        )
-'''
-slice_length = 10
-N_slices = len(kxn) - slice_length # np.floor(len(kxn) / slice_length).astype(int)
 
-e_windowed_te = np.zeros((len(pha.freq), N_slices))
-e_windowed_tm = np.zeros((len(pha.freq), N_slices))
-
-for i in range(len(pha.freq)):
-    for j in range(N_slices):
-        e_windowed_te[i,j] = np.nanmean(e_rpd_te[i,j:j + slice_length])
-        e_windowed_tm[i,j] = np.nanmean(e_rpd_tm[i,j:j + slice_length])
-
-plot_2(kxn[:N_slices], pha.freq*1e-9, e_windowed_te, kxn[:N_slices], pha.freq*1e-9, e_windowed_tm, 
-       cbar_label='windowed $e_{RPD}$ |dB', cmap=cm.bwr, 
-       vmin=-e_max, vmax=e_max,
-       num_levels=num_levels,
-       ncticks=7,
-       filename='e_win_RPD'
-       )
-'''
 
 
 
