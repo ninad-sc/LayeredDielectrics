@@ -1,6 +1,6 @@
 # Layered Dielectrics
 
-Transfer matrix based layered dielectric propagation model for reflection coefficient and APD (Absorbed Power Density) calculation.
+Transfer matrix based layered dielectric propagation model for reflection coefficient and APD (Absorbed Power Density) calculation. Implemented as described in "Chitnis, N., Karimi, F., Kühn, S., Fallahi, A., Christ, A. and Kuster, N. (2025), Traceable Assessment of the Absorbed Power Density of Body Mounted Devices at Frequencies Above 10 GHz. Bioelectromagnetics, 46: e70018. https://doi.org/10.1002/bem.70018" 
 
 ## Overview
 
