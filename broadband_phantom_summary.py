@@ -21,18 +21,11 @@ import matplotlib.lines as mlines
 from matplotlib import cm
 import helpers
 import phantoms
-<<<<<<< HEAD
 
 plt.rcParams.update({
     'font.size': config.FONT_SIZE,
     'savefig.transparent': getattr(config, 'PLOT_TRANSPARENT', True),
 })
-=======
-import config
-matplotlib.use('Qt5Agg')
-plt.rcParams.update({'font.size': 24})
->>>>>>> 24bf839e6fad9d5a50d824a8f6d1badbee55e27c
-
 
 # Calculates APD on SC layer
 def get_APD_skin(material):
@@ -274,40 +267,4 @@ plot_2(kxn, pha.freq*1e-9, e_rpd_te, kxn, pha.freq*1e-9, e_rpd_tm,
        ncticks=7,
        filename=f'e_RPD_{pha.name}'
        )
-<<<<<<< HEAD
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-=======
-'''
-slice_length = 10
-N_slices = len(kxn) - slice_length # np.floor(len(kxn) / slice_length).astype(int)
-
-e_windowed_te = np.zeros((len(pha.freq), N_slices))
-e_windowed_tm = np.zeros((len(pha.freq), N_slices))
-
-for i in range(len(pha.freq)):
-    for j in range(N_slices):
-        e_windowed_te[i,j] = np.nanmean(e_rpd_te[i,j:j + slice_length])
-        e_windowed_tm[i,j] = np.nanmean(e_rpd_tm[i,j:j + slice_length])
-
-plot_2(kxn[:N_slices], pha.freq*1e-9, e_windowed_te, kxn[:N_slices], pha.freq*1e-9, e_windowed_tm, 
-       cbar_label='windowed $e_{RPD}$ |dB', cmap=cm.bwr, 
-       vmin=-e_max, vmax=e_max,
-       num_levels=num_levels,
-       ncticks=7,
-       filename='e_win_RPD'
-       )
-'''
->>>>>>> 24bf839e6fad9d5a50d824a8f6d1badbee55e27c

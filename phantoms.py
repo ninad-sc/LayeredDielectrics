@@ -85,14 +85,14 @@ class SSL24_30GV2:
     fmin = 24e9
     fmax = 30e9
 
-    epsr_inf = 3.00
+    epsr_inf = 3.03
     sigma0 = 0.00
     depsr_1 = 20.50
-    depsr_2 = 3.09
+    depsr_2 = 3.00
     depsr_3 = 0.00
     depsr_4 = 0.00
     tau_1 = 1.54e-10
-    tau_2 = 1.40e-11
+    tau_2 = 1.39e-11
     tau_3 = 0.0
     tau_4 = 0.0
     alpha_1 = 0.16
