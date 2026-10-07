@@ -230,7 +230,7 @@ def get_pn_unc(skin, freq, phantom_params_, dev):
 
 
 if "pha" not in globals():
-    pha = phantoms.PHA24_30G_V2()
+    pha = phantoms.PHA10_18G()
 
 delta_T = 2 # max temperature change [°C] 
 omega = 2 * np.pi * pha.freq
@@ -267,8 +267,8 @@ phantom_params = [
                     ]
 
 e_te, e_tm, apd_te, apd_tm = calc_overall_error(skin, pha.freq, phantom_params)
-unc_skin_te = np.abs(np.nanmean(e_te)) #np.nanmax(np.abs(np.mean(e_te, 1)))
-unc_skin_tm = np.abs(np.nanmean(e_tm)) #np.nanmax(np.abs(np.mean(e_tm, 1)))
+unc_skin_te = np.nanmean(np.abs(e_te)) #np.nanmax(np.abs(np.mean(e_te, 1)))
+unc_skin_tm = np.nanmean(np.abs(e_tm)) #np.nanmax(np.abs(np.mean(e_tm, 1)))
 
 contributor = [
                 'lamination_lower_thickness',
@@ -370,11 +370,14 @@ contributor_combined = [
                 'ssl_sigma',
                 'composite_shell_epsr',
                 'composite_shell_sigma',
-                'epsr_measurement',
-                'sigma_measurement',
+                'ssl_epsr_measurement',
+                'ssl_sigma_measurement',
+                'solid_epsr_measurement',
+                'solid_sigma_measurement',
                 'ssl_epsr_temperature',
                 'ssl_sigma_temperature',
-                'composite_shell_thickness',
+                'lamination_thickness',
+                'foam_shell_thickness',
                 ]
 unc_combined = np.zeros((len(contributor_combined), 2))
 for i, c in enumerate(contributor_combined):
@@ -382,37 +385,43 @@ for i, c in enumerate(contributor_combined):
         index = contributor.index(c)
         unc_combined[i,:] = unc[index,:]
     else:
-        if c == 'composite_shell_thickness':
+        if c == 'lamination_thickness':
             index1 = contributor.index('lamination_lower_thickness')
-            index2 = contributor.index('foam_thickness')
-            index3 = contributor.index('lamination_upper_thickness')
-            index4 = contributor.index('shell_thickness')
-            unc_combined[i,:] = np.sqrt(unc[index1,:]**2 + unc[index2,:]**2 + unc[index3,:]**2 + unc[index4,:]**2)
+            index2 = contributor.index('lamination_upper_thickness')
+            unc_combined[i,:] = np.sqrt(unc[index1,:]**2 + unc[index2,:]**2)
+        if c == 'foam_shell_thickness':
+            index1 = contributor.index('foam_thickness')
+            index2 = contributor.index('shell_thickness')
+            unc_combined[i,:] = np.sqrt(unc[index1,:]**2 + unc[index2,:]**2)
         if c == 'composite_shell_epsr':
             index1 = contributor.index('lamination_lower_epsr')
             index2 = contributor.index('foam_epsr')
             index3 = contributor.index('lamination_upper_epsr')
             index4 = contributor.index('shell_epsr')
             unc_combined[i,:] = np.sqrt(unc[index1,:]**2 + unc[index2,:]**2 + unc[index3,:]**2 + unc[index4,:]**2)
-        if c == 'epsr_measurement':
+            if c == 'composite_shell_sigma':
+                index1 = contributor.index('lamination_lower_sigma')
+                index2 = contributor.index('foam_sigma')
+                index3 = contributor.index('lamination_upper_sigma')
+                index4 = contributor.index('shell_sigma')
+                unc_combined[i,:] = np.sqrt(unc[index1,:]**2 + unc[index2,:]**2 + unc[index3,:]**2 + unc[index4,:]**2)
+        if c == 'ssl_epsr_measurement':
+            index5 = contributor.index('ssl_epsr_measurement')
+            unc_combined[i,:] = np.sqrt(unc[index5,:]**2)
+        if c == 'ssl_sigma_measurement':
+            index5 = contributor.index('ssl_sigma_measurement')
+            unc_combined[i,:] = np.sqrt(unc[index5,:]**2)
+        if c == 'solid_epsr_measurement':
             index1 = contributor.index('lamination_lower_epsr_measurement')
             index2 = contributor.index('foam_epsr_measurement')
             index3 = contributor.index('lamination_upper_epsr_measurement')
             index4 = contributor.index('shell_epsr_measurement')
-            index5 = contributor.index('ssl_epsr_measurement')
-            unc_combined[i,:] = np.sqrt(unc[index1,:]**2 + unc[index2,:]**2 + unc[index3,:]**2 + unc[index4,:]**2 + unc[index5,:]**2)
-        if c == 'sigma_measurement':
+            unc_combined[i,:] = np.sqrt(unc[index1,:]**2 + unc[index2,:]**2 + unc[index3,:]**2 + unc[index4,:]**2)
+        if c == 'solid_sigma_measurement':
             index1 = contributor.index('lamination_lower_sigma_measurement')
             index2 = contributor.index('foam_sigma_measurement')
             index3 = contributor.index('lamination_upper_sigma_measurement')
             index4 = contributor.index('shell_sigma_measurement')
-            index5 = contributor.index('ssl_sigma_measurement')
-            unc_combined[i,:] = np.sqrt(unc[index1,:]**2 + unc[index2,:]**2 + unc[index3,:]**2 + unc[index4,:]**2 + unc[index5,:]**2)
-        if c == 'composite_shell_sigma':
-            index1 = contributor.index('lamination_lower_sigma')
-            index2 = contributor.index('foam_sigma')
-            index3 = contributor.index('lamination_upper_sigma')
-            index4 = contributor.index('shell_sigma')
             unc_combined[i,:] = np.sqrt(unc[index1,:]**2 + unc[index2,:]**2 + unc[index3,:]**2 + unc[index4,:]**2)
         if c == 'skin_emulation':
             unc_combined[i,:] = np.array([unc_skin_te, unc_skin_tm])

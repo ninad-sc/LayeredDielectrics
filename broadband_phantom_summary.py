@@ -253,13 +253,15 @@ e_max = 6.
 step = 0.5
 num_levels = int((2*e_max)/step) + 1
 
-'''plot_2(kxn, pha.freq*1e-9, e_apd_te, kxn, pha.freq*1e-9, e_apd_tm, 
+'''
+plot_2(kxn, pha.freq*1e-9, e_apd_te, kxn, pha.freq*1e-9, e_apd_tm, 
        cbar_label='$e_{APD}$ |dB', cmap=cm.bwr, 
        vmin=-e_max, vmax=e_max,
        num_levels=num_levels,
        ncticks=7,
-       filename='e_APD'
-       )'''
+       filename=f'e_APD_{pha.name}'
+       )
+'''
 plot_2(kxn, pha.freq*1e-9, e_rpd_te, kxn, pha.freq*1e-9, e_rpd_tm, 
        cbar_label='$e_{RPD}$ |dB', cmap=cm.bwr, 
        vmin=-e_max, vmax=e_max,

@@ -29,7 +29,7 @@ MATPLOTLIB_BACKEND = "Qt5Agg"
 
 # Figure settings
 FIGURE_SIZE_DEFAULT = (16, 9)
-FONT_SIZE = 24
+FONT_SIZE = 32
 
 # ============================================================================
 # SIMULATION PARAMETERS

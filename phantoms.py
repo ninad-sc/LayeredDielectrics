@@ -100,8 +100,8 @@ class SSL24_30GV2:
     alpha_3 = 0.00
     alpha_4 = 0.00 
     
-    epsr_Tgrad = 0.88
-    sigma_Tgrad = 2.37
+    epsr_Tgrad = 0.84
+    sigma_Tgrad = 2.56
     
     
 class SSL30_45G:
@@ -215,7 +215,7 @@ class PHA24_30G:
     sigma_epoxy = tan_d_epoxy * 2 * np.pi * freq * epsilon_0 * epsr_epoxy
     
     epsr_shell = 12.
-    tan_d_shell = 0.002
+    tan_d_shell = 0.001
     sigma_shell = tan_d_shell * 2 * np.pi * freq * epsilon_0 * epsr_shell
     
     foam_thickness = 2.0e-3
@@ -248,7 +248,7 @@ class PHA24_30G_V2:
     sigma_epoxy = tan_d_epoxy * 2 * np.pi * freq * epsilon_0 * epsr_epoxy
     
     epsr_shell = 12.
-    tan_d_shell = 0.002
+    tan_d_shell = 0.001
     sigma_shell = tan_d_shell * 2 * np.pi * freq * epsilon_0 * epsr_shell
     
     foam_thickness = 2.0e-3
@@ -279,7 +279,7 @@ class PHA30_45G:
     sigma_epoxy = tan_d_epoxy * 2 * np.pi * freq * epsilon_0 * epsr_epoxy
     
     epsr_shell = 12.
-    tan_d_shell = 0.002
+    tan_d_shell = 0.001
     sigma_shell = tan_d_shell * 2 * np.pi * freq * epsilon_0 * epsr_shell
     
     foam_thickness = 2.0e-3
@@ -377,7 +377,6 @@ class PHAmmW70_110G:
     tan_d_foam = 2.68e-3
     sigma_foam = 0.#tan_d_foam * 2 * np.pi * freq * epsilon_0 * epsr_foam
     
-    
     epsr_epoxy = 3.2
     tan_d_epoxy = 0.01
     sigma_epoxy = tan_d_epoxy * 2 * np.pi * freq * epsilon_0 * epsr_epoxy
@@ -389,6 +388,35 @@ class PHAmmW70_110G:
     foam_thickness = 2.0e-3
     epoxy_thickness = 0.0
     shell_thickness = 0.54e-3
+    
+    fmin = np.amin(freq) * 1e-9
+    fmax = np.amax(freq) * 1e-9
+    
+
+class PHA_TH30G:
+    name = 'PHA_TH30G'
+    
+    freq = np.arange(10e9, 45.1e9, 0.25e9)
+    epsr_ssl = np.ones((len(freq)))
+    sigma_ssl = np.zeros((len(freq)))
+    
+    delta = helpers.penetration_depth(freq, epsr_ssl, sigma_ssl)
+    
+    epsr_foam = 1.
+    tan_d_foam = 2.68e-3
+    sigma_foam = 0.#tan_d_foam * 2 * np.pi * freq * epsilon_0 * epsr_foam
+    
+    epsr_epoxy = 3.2
+    tan_d_epoxy = 0.01
+    sigma_epoxy = tan_d_epoxy * 2 * np.pi * freq * epsilon_0 * epsr_epoxy
+    
+    epsr_shell = 7.75961
+    tan_d_shell = 2.98e-2 #0.01789
+    sigma_shell = 5.24061 #tan_d_shell * 2 * np.pi * freq * epsilon_0 * epsr_shell
+    
+    foam_thickness = 2.0e-3
+    epoxy_thickness = 0.0
+    shell_thickness = 1.0e-3
     
     fmin = np.amin(freq) * 1e-9
     fmax = np.amax(freq) * 1e-9
