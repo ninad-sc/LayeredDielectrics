@@ -25,7 +25,7 @@ with warnings.catch_warnings():
     import phantoms
 plt.rcParams.update({'font.size': 24})
 COLORS = ['r', 'b', 'c', 'tab:orange', 'tab:purple', 'tab:green', 'tab:brown', 'tab:pink']
-ROOT = Path(__file__).resolve().parent
+ROOT = Path.cwd()
 FREQUENCIES_GHZ = (10., 15., 20., 30., 45.)
 AIR_COLOR = '0.85'
 

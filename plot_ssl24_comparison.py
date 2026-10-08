@@ -36,7 +36,7 @@ def save_figure(fig, output, name):
 
 
 def main():
-    output = Path(__file__).resolve().parent / 'output' / 'plots'
+    output = Path.cwd() / 'output' / 'plots'
     output.mkdir(parents=True, exist_ok=True)
     materials = [phantoms.SSL24_30G, phantoms.SSL24_30GV2]
     frequency = np.linspace(max(m.fmin for m in materials),

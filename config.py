@@ -11,7 +11,8 @@ from pathlib import Path
 # PROJECT PATHS
 # ============================================================================
 
-PROJECT_ROOT = Path(__file__).parent
+# Keep generated files in the working directory, including after pip installation.
+PROJECT_ROOT = Path.cwd()
 OUTPUT_DIR = PROJECT_ROOT / "output"
 OUTPUT_PLOTS_DIR = OUTPUT_DIR / "plots"
 OUTPUT_TABLES_DIR = OUTPUT_DIR / "tables"

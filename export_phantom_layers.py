@@ -21,7 +21,7 @@ SSL_THICKNESS_MM = "> 20"
 # Set a material name if known; otherwise use WP156 for PHA10_18G as in
 # the reference, and a generic shell label elsewhere.
 SHELL_MATERIAL = None
-OUTPUT_DIR = Path(__file__).resolve().parent / "output" / "tables" / "phantom_layers"
+OUTPUT_DIR = Path.cwd() / "output" / "tables" / "phantom_layers"
 
 
 def create_layer_dataframe(phantom, frequency_ghz, ssl_thickness_mm="> 20",

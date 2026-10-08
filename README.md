@@ -6,7 +6,13 @@ The model is described in Chitnis, N., Karimi, F., Kühn, S., Fallahi, A., Chris
 
 ## Installation
 
-Run the scripts from the repository root. Modules and scripts are stored directly in this directory.
+Install directly from GitHub:
+
+```sh
+python -m pip install git+https://github.com/ninad-sc/LayeredDielectrics.git
+```
+
+Alternatively, clone the repository and create a virtual environment:
 
 ```sh
 git clone https://github.com/ninad-sc/LayeredDielectrics.git
@@ -26,17 +32,29 @@ Activate the environment:
 source .venv/bin/activate
 ```
 
-Install the numerical and file-export dependencies:
+Install the repository and its numerical and file-export dependencies:
 
 ```sh
-python -m pip install -r requirements.txt
+python -m pip install .
 ```
 
-The current configuration and several plotting scripts select `Qt5Agg`. Interactive plotting requires a Qt binding, such as PyQt5, which is not included in `requirements.txt`:
+For development, use `python -m pip install -e .` so changes to the source modules take effect immediately.
+
+The current configuration and several plotting scripts select `Qt5Agg`. Install the optional GUI dependencies for interactive plotting:
 
 ```sh
-python -m pip install PyQt5
+python -m pip install ".[gui]"
 ```
+
+The installed modules retain their existing names: `import helpers`, `import phantoms`, and `import config`. Run installed scripts from any directory using `python -m`, for example:
+
+```sh
+python -m run_phantom_summary --list
+python -m run_sensitivity --list
+python -m run_phantom_summary PHA24_30G_V2
+```
+
+Generated plots and tables are saved under `output/` in the working directory. The `python script.py` examples below also work from a source checkout.
 
 For headless use, select `Agg` in `config.py` and in scripts that explicitly call `matplotlib.use('Qt5Agg')`, before importing `matplotlib.pyplot`. Some scripts set their backend independently of `config.py`.
 
