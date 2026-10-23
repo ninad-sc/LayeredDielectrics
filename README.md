@@ -40,28 +40,43 @@ python -m pip install .
 
 For development, use `python -m pip install -e .` so changes to the source modules take effect immediately.
 
-The current configuration and several plotting scripts select `Qt5Agg`. Install the optional GUI dependencies for interactive plotting:
+The installed package is imported as `layered_dielectrics`. Numerical imports
+do not initialize Matplotlib or create files. Analysis commands work from any
+directory and save results under `output/` in that directory.
 
 ```sh
-python -m pip install ".[gui]"
+layered-dielectrics-summary --list
+layered-dielectrics-sensitivity --list
+layered-dielectrics-summary PHA24_30G_V2
 ```
 
-The installed modules retain their existing names: `import helpers`, `import phantoms`, and `import config`. Run installed scripts from any directory using `python -m`, for example:
+The equivalent module invocation is:
 
 ```sh
-python -m run_phantom_summary --list
-python -m run_sensitivity --list
-python -m run_phantom_summary PHA24_30G_V2
+python -m layered_dielectrics.run_phantom_summary --list
 ```
 
-Generated plots and tables are saved under `output/` in the working directory. The `python script.py` examples below also work from a source checkout.
+Plotting defaults to the noninteractive `Agg` backend and saves SVG and PDF
+figures. An application that has already initialized pyplot keeps its backend.
+To open interactive windows, install `python -m pip install ".[gui]"` and set
+`MPLBACKEND=Qt5Agg` before starting Python (PowerShell: `$env:MPLBACKEND = "Qt5Agg"`).
 
-For headless use, select `Agg` in `config.py` and in scripts that explicitly call `matplotlib.use('Qt5Agg')`, before importing `matplotlib.pyplot`. Some scripts set their backend independently of `config.py`.
+Set `LAYERED_DIELECTRICS_OUTPUT_DIR` before starting Python to change the output
+root. In Python, use `from layered_dielectrics import config` followed by
+`config.set_output_directory("my-results")` before running an analysis. Output
+directories are created only when an operation saves a result. Plot settings are
+scoped to each plotting operation and restored afterward: font size 24, figure
+size 16 × 9, constrained layout, and red/blue/cyan/orange/purple curve colours.
+
+Source-checkout launchers such as `python run_phantom_summary.py --list` remain
+available after installing the package. Existing callers should replace
+`import helpers`, `import phantoms`, or `import config` with
+`from layered_dielectrics import helpers, phantoms, config`.
 
 ## APD decay through all layers
 
 ```sh
-python plot_apd_vs_z.py
+layered-dielectrics-apd
 ```
 
 This produces one figure per frequency at **10, 15, 20, 30, and 45 GHz**. Each figure combines the selected phantom profiles, a skin profile, and a material-layer diagram over z = 0–10 mm.
@@ -91,75 +106,73 @@ Outputs:
 ## Broadband reflection and APD summaries
 
 ```sh
-python run_phantom_summary.py --list
-python run_phantom_summary.py PHA24_30G_V2
-python run_phantom_summary.py --all
+layered-dielectrics-summary --list
+layered-dielectrics-summary PHA24_30G_V2
+layered-dielectrics-summary --all
 ```
 
-The runner discovers active `PHA*` classes from `phantoms.py`; without arguments, it runs all classes. It calls `broadband_phantom_summary.py` for each selection and uses a noninteractive backend. The summary evaluates phantom APD at the final layer's entrance and skin APD at the SC entrance, across each class frequency grid and normalized transverse wave numbers.
+The runner discovers active `PHA*` classes from `phantoms.py`; without arguments, it runs all classes. It calls `layered_dielectrics.broadband_phantom_summary.run(phantom)` for each selection and uses a noninteractive backend. The summary evaluates phantom APD at the final layer's entrance and skin APD at the SC entrance, across each class frequency grid and normalized transverse wave numbers.
 
 ## Sensitivity analysis
 
 ```sh
-python run_sensitivity.py --list
-python run_sensitivity.py PHA10_18G
-python run_sensitivity.py --all
+layered-dielectrics-sensitivity --list
+layered-dielectrics-sensitivity PHA10_18G
+layered-dielectrics-sensitivity --all
 ```
 
 Without arguments, the runner selects `PHA10_18G`. Supported classes are `PHA10_18G`, `PHA18_24G`, `PHA24_30G`, `PHA24_30G_V2`, and `PHA30_45G`. Results include uncertainty workbooks under `output/tables/`.
 
-`standard_compliant_sensitivity.py` is an additional exporter for grouping uncertainty components into workbooks under `output/standard_compliant_tables/`. Its `STANDARD_COMPONENTS` mapping currently expects legacy names (`epsr_measurement`, `sigma_measurement`, and `composite_shell_thickness`). The current `sensitivity.py` exports separate SSL/solid measurement and lamination/foam-shell thickness contributors; reconcile that mapping before using the exporter. Thermal-property entries are left empty.
-
 ## Material-property and layer exports
 
 ```sh
-python plot_ssl24_comparison.py
-python calculate_ssl_penetration_depth.py --list
-python calculate_ssl_penetration_depth.py --no-show
-python export_phantom_layers.py
+layered-dielectrics-ssl24
+layered-dielectrics-penetration-depth --list
+layered-dielectrics-penetration-depth --no-show
+layered-dielectrics-export-layers
 ```
 
 - `plot_ssl24_comparison.py` compares the SSL24 and SSL24 V2 permittivity/conductivity models over 24–30 GHz and plots signed percentage deviations. It saves SVG, PDF, and PNG files.
-- `calculate_ssl_penetration_depth.py` plots the 1/e electric-field amplitude penetration depth for SSL-backed phantom classes. It accepts class names and an `--output` path. The current default output is `output/plots/ssl_penetration_depth.pdf`; `--no-show` suppresses `plt.show()` but retains the script's Qt backend selection.
-- `export_phantom_layers.py` exports five-layer material properties as CSV. Edit its `PHANTOM`, `FREQUENCY_GHZ`, and output settings before running. It preserves zero-thickness layers and rejects frequencies outside the stored class range. Its SSL thickness label is a display setting, not a finite layer boundary in the propagation model.
+- `calculate_ssl_penetration_depth.py` plots the 1/e electric-field amplitude penetration depth for SSL-backed phantom classes. It accepts class names and an `--output` path. By default it saves both `output/plots/ssl_penetration_depth.svg` and `.pdf`; an explicit `--output` path saves only that format. `--no-show` suppresses `plt.show()`.
+- `export_phantom_layers.py` exports five-layer material properties as CSV. Select a phantom and frequency with `layered-dielectrics-export-layers PHA24_30G_V2 --frequency 27 --output layers.csv`. It preserves zero-thickness layers and rejects frequencies outside the stored class range. Its SSL thickness label is a display setting, not a finite layer boundary in the propagation model.
 
 ## Basic reflection calculation
 
-This standalone example evaluates the full `PHA24_30G_V2` stack at normal incidence using its stored frequency grid:
+This example evaluates the full `PHA24_30G_V2` stack at normal incidence using
+its stored frequency grid. Each coefficient array has shape `(frequency, kxn)`:
 
 ```python
-import config
-config.MATPLOTLIB_BACKEND = 'Agg'
-
 import numpy as np
-from scipy.constants import epsilon_0
-import helpers
-import phantoms
+from layered_dielectrics import calculate_reflection, phantoms
 
-pha = phantoms.PHA24_30G_V2()
-frequency = pha.freq
-omega = 2 * np.pi * frequency
-material = helpers.Phantom_4layer(
-    frequency,
-    pha.epsr_epoxy, pha.epsr_foam, pha.epsr_epoxy,
-    pha.epsr_shell, pha.epsr_ssl,
-    pha.sigma_epoxy, pha.sigma_foam, pha.sigma_epoxy,
-    pha.sigma_shell, pha.sigma_ssl,
-    pha.epoxy_thickness, pha.foam_thickness,
-    pha.epoxy_thickness, pha.shell_thickness,
-)
-kxn = np.array([0.0])
-k0_air = helpers.get_k0(omega, 1.0, 0.0)
-kx = k0_air[:, None] * kxn[None, :]
-kz_air = helpers.get_kz(k0_air, kx)
-eps_air = np.full(frequency.shape, epsilon_0)
-material.calc_k0(omega)
-material.calc_kz(kxn, k0_air)
-transfer_te, transfer_tm = helpers.get_overall_T_4layer(
-    kxn, kz_air, eps_air, material)
-reflection_te, transmission_te = helpers.get_R_T(transfer_te)
-print(frequency / 1e9, np.abs(reflection_te[:, 0]))
+result = calculate_reflection(phantoms.PHA24_30G_V2())
+print(result.frequency / 1e9, np.abs(result.reflection_te[:, 0]))
+
+# Multiple transverse wave numbers; kxn is normalized to the air wave number.
+result = calculate_reflection(phantoms.PHA24_30G_V2(), kxn=[0.0, 0.5, 0.9])
 ```
+
+The returned `ReflectionResult` contains `frequency` (Hz), `kxn`, and TE/TM
+reflection and transmission field coefficients. Exact grazing incidence
+(`kxn=1`) is singular in the transfer matrix formulation and is rejected by
+this convenience API. Low-level calculations and material classes remain
+available through `from layered_dielectrics import helpers, phantoms`.
+
+Analyses also have explicit callable APIs:
+
+```python
+from layered_dielectrics import config, phantoms
+from layered_dielectrics.broadband_phantom_summary import run as summary
+from layered_dielectrics.sensitivity import run as sensitivity
+
+config.set_output_directory("results")
+fields = summary(phantoms.PHA24_30G_V2())  # arrays plus saved plots
+table = sensitivity(phantoms.PHA10_18G())  # DataFrame plus saved workbook
+```
+
+The legacy sensitivity grid includes exact grazing incidence; intermediate
+undefined values at that point can emit numerical warnings. Its existing
+NaN-aware aggregation and scientific calculation are retained.
 
 The transfer matrices propagate forward/backward field coefficients through interfaces and finite layers. `get_R_T` returns field coefficients, not power ratios. The APD helpers use the same field-amplitude convention for incident and transmitted flux, so normalization cancels the common scale factor.
 
@@ -172,15 +185,27 @@ The transfer matrices propagate forward/backward field coefficients through inte
 | `config.py` | Shared output paths, backend, figure settings, and defaults |
 | `broadband_phantom_summary.py`, `run_phantom_summary.py` | Broadband analysis and class runner |
 | `sensitivity.py`, `run_sensitivity.py` | Sensitivity calculations and class runner |
-| `standard_compliant_sensitivity.py` | Grouped uncertainty workbook exporter |
 | `plot_apd_vs_z.py` | Selected-frequency APD decay and layer diagrams |
 | `plot_ssl24_comparison.py` | SSL24 material comparison |
 | `calculate_ssl_penetration_depth.py` | SSL penetration-depth plots |
 | `export_phantom_layers.py` | Layer-property CSV export |
 
-Shared settings live in `config.py`; scripts may also define their own frequencies, backend, styling, or output paths. Phantom frequency grids and layer properties live in `phantoms.py`, and skin dispersion parameters live in `helpers.py`.
+Package sources live in `src/layered_dielectrics/`. Shared settings live in `layered_dielectrics.config`; analysis modules may also define their own frequencies and styling. Phantom frequency grids and layer properties live in `phantoms.py`, and skin dispersion parameters live in `helpers.py`.
 
 Generated files under `output/` are ignored by Git. Run the scripts locally to regenerate plots and tables.
+
+## Development and verification
+
+```sh
+python -m pip install -e ".[dev]"
+python -m pytest
+python -m build
+```
+
+Tests cover import side effects, installed module discovery from another working
+directory, matched-medium and Fresnel limits, lossless energy conservation,
+stored phantom reflection, sensitivity regression, and saved summary formats.
+CI runs on Python 3.8, 3.11, and 3.13 and builds the source and wheel distributions.
 
 ## Contributing and license
 

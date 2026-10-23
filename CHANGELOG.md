@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Packaging
+- Install a namespaced `layered_dielectrics` package from a `src/` layout.
+- Add a reflection convenience API and installed analysis/export commands.
+- Make numerical imports independent of plotting and filesystem writes.
+- Run analyses explicitly, with scoped plot defaults and headless support.
+- Add numerical regression tests and package build checks in CI.
+- Remove the standard-compliant sensitivity exporter.
+
 ### Added
 - Initial project structure with proper module organization
 - Configuration system via `config.py`

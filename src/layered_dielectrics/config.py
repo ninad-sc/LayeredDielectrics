@@ -13,24 +13,29 @@ from pathlib import Path
 
 # Keep generated files in the working directory, including after pip installation.
 PROJECT_ROOT = Path.cwd()
-OUTPUT_DIR = PROJECT_ROOT / "output"
+OUTPUT_DIR = Path(os.environ.get("LAYERED_DIELECTRICS_OUTPUT_DIR", PROJECT_ROOT / "output"))
 OUTPUT_PLOTS_DIR = OUTPUT_DIR / "plots"
 OUTPUT_TABLES_DIR = OUTPUT_DIR / "tables"
 
-# Create output directories if they don't exist
-OUTPUT_PLOTS_DIR.mkdir(parents=True, exist_ok=True)
-OUTPUT_TABLES_DIR.mkdir(parents=True, exist_ok=True)
+
+def set_output_directory(path):
+    """Set output paths for subsequent analyses without creating directories."""
+    global OUTPUT_DIR, OUTPUT_PLOTS_DIR, OUTPUT_TABLES_DIR
+    OUTPUT_DIR = Path(path).expanduser().resolve()
+    OUTPUT_PLOTS_DIR = OUTPUT_DIR / "plots"
+    OUTPUT_TABLES_DIR = OUTPUT_DIR / "tables"
 
 # ============================================================================
 # MATPLOTLIB SETTINGS
 # ============================================================================
 
 # Backend: 'Agg' for non-interactive, 'Qt5Agg' for interactive display
-MATPLOTLIB_BACKEND = "Qt5Agg"
+MATPLOTLIB_BACKEND = os.environ.get("MPLBACKEND", "Agg")
 
 # Figure settings
 FIGURE_SIZE_DEFAULT = (16, 9)
-FONT_SIZE = 32
+FONT_SIZE = 24
+COLORS = ['r', 'b', 'c', 'tab:orange', 'tab:purple']
 
 # ============================================================================
 # SIMULATION PARAMETERS

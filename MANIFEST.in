@@ -1,0 +1,5 @@
+include CHANGELOG.md requirements.txt
+include run_phantom_summary.py run_sensitivity.py broadband_phantom_summary.py sensitivity.py
+include calculate_ssl_penetration_depth.py export_phantom_layers.py
+include plot_apd_vs_z.py plot_ssl24_comparison.py
+recursive-include tests *.py *.json

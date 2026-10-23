@@ -7,24 +7,8 @@ Created on Thu Jan 30 09:30:24 2025
 """
 
 import numpy as np
-import sys
 from scipy.constants import c, epsilon_0, mu_0
 from scipy.optimize import minimize
-import matplotlib
-import config
-
-if "matplotlib.pyplot" not in sys.modules:
-    matplotlib.use(config.MATPLOTLIB_BACKEND)
-import matplotlib.pyplot as plt
-import matplotlib.colors as mc
-import matplotlib.patches as mpatches
-import matplotlib.lines as mlines
-from matplotlib import cm
-
-plt.rcParams.update({
-    'font.size': config.FONT_SIZE,
-    'savefig.transparent': getattr(config, 'PLOT_TRANSPARENT', True),
-})
 
 
 # ============================================================================
@@ -33,14 +17,14 @@ plt.rcParams.update({
 
 def getEpsrSigma(epscomplex, omega):
     """Extract relative permittivity and conductivity from complex permittivity.
-    
+
     Parameters
     ----------
     epscomplex : complex array
         Complex permittivity (F/m)
     omega : float or array
         Angular frequency (rad/s)
-        
+
     Returns
     -------
     epsr : array
@@ -55,7 +39,7 @@ def getEpsrSigma(epscomplex, omega):
 
 def getColeCole(epsr_inf, sigma0, omega, epsr_debye, tau, alpha):
     """Calculate complex permittivity using Cole-Cole dispersion model.
-    
+
     Parameters
     ----------
     epsr_inf : float
@@ -70,7 +54,7 @@ def getColeCole(epsr_inf, sigma0, omega, epsr_debye, tau, alpha):
         Relaxation time (s)
     alpha : float
         Relaxation parameter (0-1)
-        
+
     Returns
     -------
     epscomplex : complex array
@@ -88,24 +72,24 @@ def get_midTerm(a, depsr, omega, tau, alpha):
 
 
 def getColeCole_5term(epsr_inf, sigma0, omega,
-                      depsr_1, depsr_2, depsr_3, depsr_4, 
-                      tau_1, tau_2, tau_3, tau_4, 
+                      depsr_1, depsr_2, depsr_3, depsr_4,
+                      tau_1, tau_2, tau_3, tau_4,
                       alpha_1, alpha_2, alpha_3, alpha_4):
     """Calculate complex permittivity with 4 Cole-Cole relaxation terms."""
     eps_inf = epsr_inf * epsilon_0
-    
+
     t1 = get_midTerm(1, depsr_1, omega, tau_1, alpha_1)
     t2 = get_midTerm(1, depsr_2, omega, tau_2, alpha_2)
     t3 = get_midTerm(1, depsr_3, omega, tau_3, alpha_3)
     t4 = get_midTerm(1, depsr_4, omega, tau_4, alpha_4)
-    
+
     epscomplex = eps_inf + t1 + t2 - 1j * sigma0 / (omega) + t3 + t4
     return epscomplex
 
 
 def penetration_depth(f, epsilon_r, sigma):
     """Calculate penetration depth in material.
-    
+
     Parameters
     ----------
     f : float or array
@@ -114,7 +98,7 @@ def penetration_depth(f, epsilon_r, sigma):
         Relative permittivity
     sigma : float or array
         Conductivity (S/m)
-        
+
     Returns
     -------
     delta : array
@@ -122,7 +106,11 @@ def penetration_depth(f, epsilon_r, sigma):
     """
     w = 2 * np.pi * f
     epsilon_c = (epsilon_r * epsilon_0) - 1j*(sigma/w)
-    delta = -1/np.imag(w*np.sqrt(mu_0*epsilon_c)) * 1e3
+    attenuation = -np.imag(w * np.sqrt(mu_0 * epsilon_c))
+    # A lossless medium has infinite penetration depth.
+    delta = np.divide(1e3, attenuation,
+                      out=np.full(np.shape(attenuation), np.inf),
+                      where=attenuation != 0)
     return delta
 
 
@@ -173,7 +161,7 @@ def get_overall_T(kxn, kz_0, eps_c0, material):
     T_te_10 = get_transfer_matrix_TE(kz_0, material.kz_1, 0.)
     T_te_21 = get_transfer_matrix_TE(material.kz_1, material.kz_2, material.d_1)
     T_te_32 = get_transfer_matrix_TE(material.kz_2, material.kz_3, material.d_2)
-    
+
     T_tm_10 = get_transfer_matrix_TM(kz_0, material.kz_1, 0., eps_c0, material.eps_c1)
     T_tm_21 = get_transfer_matrix_TM(material.kz_1, material.kz_2, material.d_1, material.eps_c1, material.eps_c2)
     T_tm_32 = get_transfer_matrix_TM(material.kz_2, material.kz_3, material.d_2, material.eps_c2, material.eps_c3)
@@ -185,7 +173,7 @@ def get_overall_T(kxn, kz_0, eps_c0, material):
         for j in range(len(kz_0[0,:])):
             T_te[:,:,i,j] = T_te_32[:,:,i,j] @ T_te_21[:,:,i,j] @ T_te_10[:,:,i,j]
             T_tm[:,:,i,j] = T_tm_32[:,:,i,j] @ T_tm_21[:,:,i,j] @ T_tm_10[:,:,i,j]
-        
+
     return T_te, T_tm
 
 
@@ -195,7 +183,7 @@ def get_overall_T_3layer(kxn, kz_0, eps_c0, material):
     T_te_21 = get_transfer_matrix_TE(material.kz_1, material.kz_2, material.d_1)
     T_te_32 = get_transfer_matrix_TE(material.kz_2, material.kz_3, material.d_2)
     T_te_43 = get_transfer_matrix_TE(material.kz_3, material.kz_4, material.d_3)
-    
+
     T_tm_10 = get_transfer_matrix_TM(kz_0, material.kz_1, 0., eps_c0, material.eps_c1)
     T_tm_21 = get_transfer_matrix_TM(material.kz_1, material.kz_2, material.d_1, material.eps_c1, material.eps_c2)
     T_tm_32 = get_transfer_matrix_TM(material.kz_2, material.kz_3, material.d_2, material.eps_c2, material.eps_c3)
@@ -208,7 +196,7 @@ def get_overall_T_3layer(kxn, kz_0, eps_c0, material):
         for j in range(len(kz_0[0,:])):
             T_te[:,:,i,j] = T_te_43[:,:,i,j] @ T_te_32[:,:,i,j] @ T_te_21[:,:,i,j] @ T_te_10[:,:,i,j]
             T_tm[:,:,i,j] = T_tm_43[:,:,i,j] @ T_tm_32[:,:,i,j] @ T_tm_21[:,:,i,j] @ T_tm_10[:,:,i,j]
-        
+
     return T_te, T_tm
 
 
@@ -219,7 +207,7 @@ def get_overall_T_4layer(kxn, kz_0, eps_c0, material):
     T_te_32 = get_transfer_matrix_TE(material.kz_2, material.kz_3, material.d_2)
     T_te_43 = get_transfer_matrix_TE(material.kz_3, material.kz_4, material.d_3)
     T_te_54 = get_transfer_matrix_TE(material.kz_4, material.kz_5, material.d_4)
-    
+
     T_tm_10 = get_transfer_matrix_TM(kz_0, material.kz_1, 0., eps_c0, material.eps_c1)
     T_tm_21 = get_transfer_matrix_TM(material.kz_1, material.kz_2, material.d_1, material.eps_c1, material.eps_c2)
     T_tm_32 = get_transfer_matrix_TM(material.kz_2, material.kz_3, material.d_2, material.eps_c2, material.eps_c3)
@@ -233,7 +221,7 @@ def get_overall_T_4layer(kxn, kz_0, eps_c0, material):
         for j in range(len(kz_0[0,:])):
             T_te[:,:,i,j] = T_te_54[:,:,i,j] @ T_te_43[:,:,i,j] @ T_te_32[:,:,i,j] @ T_te_21[:,:,i,j] @ T_te_10[:,:,i,j]
             T_tm[:,:,i,j] = T_tm_54[:,:,i,j] @ T_tm_43[:,:,i,j] @ T_tm_32[:,:,i,j] @ T_tm_21[:,:,i,j] @ T_tm_10[:,:,i,j]
-        
+
     return T_te, T_tm
 
 
@@ -248,7 +236,7 @@ def get_T2(kxn, kz_0, eps_c0, material):
     """Get overall transfer matrix for 2-layer structure (alternative)."""
     T_te_10 = get_transfer_matrix_TE(kz_0, material.kz_1, 0.)
     T_te_21 = get_transfer_matrix_TE(material.kz_1, material.kz_2, material.d_1)
-    
+
     T_tm_10 = get_transfer_matrix_TM(kz_0, material.kz_1, 0., eps_c0, material.eps_c1)
     T_tm_21 = get_transfer_matrix_TM(material.kz_1, material.kz_2, material.d_1, material.eps_c1, material.eps_c2)
 
@@ -259,7 +247,7 @@ def get_T2(kxn, kz_0, eps_c0, material):
         for j in range(len(kz_0[0,:])):
             T_te_20[:,:,i,j] = T_te_21[:,:,i,j] @ T_te_10[:,:,i,j]
             T_tm_20[:,:,i,j] = T_tm_21[:,:,i,j] @ T_tm_10[:,:,i,j]
-        
+
     return T_te_20, T_tm_20
 
 
@@ -281,15 +269,15 @@ def get_APD_vector_te(A, B, kx, kz, Z):
     """Calculate APD for TE polarization."""
     Ef = np.stack((
                     np.zeros_like(kx),
-                    A, 
+                    A,
                     np.zeros_like(kx)
                  ), axis=-1)
     Eb = np.stack((
                     np.zeros_like(kx),
-                    B, 
+                    B,
                     np.zeros_like(kx)
                  ), axis=-1)
-    
+
     k_norm_f = np.stack((
                             kx,
                             np.zeros_like(kx),
@@ -311,12 +299,12 @@ def get_APD_vector_tm(A, B, kx, kz, Z):
     """Calculate APD for TM polarization."""
     Hf = np.stack((
                     np.zeros_like(kx),
-                    A, 
+                    A,
                     np.zeros_like(kx)
                  ), axis=-1)
     Hb = np.stack((
                     np.zeros_like(kx),
-                    B, 
+                    B,
                     np.zeros_like(kx)
                  ), axis=-1)
     k_norm_f = np.stack((
@@ -372,7 +360,7 @@ def get_r5(k_z1, k_z2, k_z3, k_z4, d_2, d_3):
     r21 = (k_z2-k_z1)/(k_z2+k_z1)
     r32 = (k_z3-k_z2)/(k_z3+k_z2)
     r43 = (k_z4-k_z3)/(k_z4+k_z3)
-    
+
     r4 = r43
     r3 = get_r_slab(r32, r4, k_z3, d_3)
     r2 = get_r_slab(r21, r3, k_z2, d_2)
@@ -385,17 +373,17 @@ def get_r5(k_z1, k_z2, k_z3, k_z4, d_2, d_3):
 
 class BaseMaterial3Layer:
     """Base class for 3-layer material structures.
-    
+
     This base class handles common functionality for materials with 3 layers,
     including layer 1 (air/coating), layer 2 (variable), and layer 3 (substrate).
     Subclasses override get_layer2_permittivity() and get_layer3_permittivity()
     to define material-specific behavior.
     """
-    
+
     def __init__(self, f, epsr_1=1., epsr_2=3., sigma_1=0., sigma_2=0.,
                  d_1=2e-3, d_2=20e-6):
         """Initialize 3-layer material.
-        
+
         Parameters
         ----------
         f : float or array
@@ -418,57 +406,57 @@ class BaseMaterial3Layer:
         self.sigma_1 = sigma_1
         self.d_1 = d_1
         self.d_2 = d_2
-        
+
         # Layer 2 - subclasses should override get_layer2_permittivity()
         self.eps_c2 = self.get_layer2_permittivity()
         self.epsr_2, self.sigma_2 = getEpsrSigma(self.eps_c2, 2*np.pi*f)
-        
+
         # Layer 3 - subclasses should override get_layer3_permittivity()
         self.eps_c3 = self.get_layer3_permittivity()
         self.epsr_3, self.sigma_3 = getEpsrSigma(self.eps_c3, 2*np.pi*f)
-        
+
         self.calc_eps_complex(2*np.pi*f)
         self.calc_Z(2*np.pi*f)
-    
+
     def get_layer2_permittivity(self):
         """Override in subclass to define layer 2 permittivity.
-        
+
         Returns
         -------
         eps_c2 : complex array
             Complex permittivity of layer 2 (F/m)
         """
         return get_epsr_complex(3., 0., 2*np.pi*self.f) * epsilon_0
-    
+
     def get_layer3_permittivity(self):
         """Override in subclass to define layer 3 permittivity.
-        
+
         Returns
         -------
         eps_c3 : complex array
             Complex permittivity of layer 3 (F/m)
         """
         raise NotImplementedError("Subclass must implement get_layer3_permittivity()")
-    
+
     def calc_k0(self, omega):
         """Calculate wave number in each layer."""
         self.k0_1 = get_k0(omega, self.epsr_1, self.sigma_1)
         self.k0_2 = get_k0(omega, self.epsr_2, self.sigma_2)
         self.k0_3 = get_k0(omega, self.epsr_3, self.sigma_3)
-    
+
     def calc_eps_complex(self, omega):
         """Calculate complex permittivity in each layer."""
         self.eps_c1 = get_epsr_complex(self.epsr_1, self.sigma_1, omega) * epsilon_0
         self.eps_c2 = get_epsr_complex(self.epsr_2, self.sigma_2, omega) * epsilon_0
         self.eps_c3 = get_epsr_complex(self.epsr_3, self.sigma_3, omega) * epsilon_0
-    
+
     def calc_kz(self, kxn, k0_air):
         """Calculate z-component of wave number."""
         kx = np.array([kxn*k for k in k0_air])
         self.kz_1 = get_kz(self.k0_1, kx)
         self.kz_2 = get_kz(self.k0_2, kx)
         self.kz_3 = get_kz(self.k0_3, kx)
-    
+
     def calc_Z(self, omega):
         """Calculate impedance in each layer."""
         self.calc_eps_complex(omega)
@@ -479,7 +467,7 @@ class BaseMaterial3Layer:
 
 class Skin(BaseMaterial3Layer):
     """Skin model with ziskin (layer 2) and dermis (layer 3) layers."""
-    
+
     def get_layer2_permittivity(self):
         """Layer 2: Ziskin model for skin."""
         return getColeCole(ziskin_model.epsr_inf,
@@ -488,7 +476,7 @@ class Skin(BaseMaterial3Layer):
                           ziskin_model.epsr_colecole,
                           ziskin_model.tau,
                           ziskin_model.alpha)
-    
+
     def get_layer3_permittivity(self):
         """Layer 3: Dermis material (mean values)."""
         return getColeCole(dermis.epsr_inf,
@@ -501,7 +489,7 @@ class Skin(BaseMaterial3Layer):
 
 class Skin_1std(BaseMaterial3Layer):
     """Skin model with ziskin (layer 2) and dermis with 1-std variation (layer 3)."""
-    
+
     def get_layer2_permittivity(self):
         """Layer 2: Ziskin model for skin."""
         return getColeCole(ziskin_model.epsr_inf,
@@ -510,7 +498,7 @@ class Skin_1std(BaseMaterial3Layer):
                           ziskin_model.epsr_colecole,
                           ziskin_model.tau,
                           ziskin_model.alpha)
-    
+
     def get_layer3_permittivity(self):
         """Layer 3: Dermis with 1 standard deviation variation."""
         return getColeCole(dermis_1std_dev.epsr_inf,
@@ -523,7 +511,7 @@ class Skin_1std(BaseMaterial3Layer):
 
 class Skin_2std(BaseMaterial3Layer):
     """Skin model with ziskin (layer 2) and dermis with 2-std variation (layer 3)."""
-    
+
     def get_layer2_permittivity(self):
         """Layer 2: Ziskin model for skin."""
         return getColeCole(ziskin_model.epsr_inf,
@@ -532,7 +520,7 @@ class Skin_2std(BaseMaterial3Layer):
                           ziskin_model.epsr_colecole,
                           ziskin_model.tau,
                           ziskin_model.alpha)
-    
+
     def get_layer3_permittivity(self):
         """Layer 3: Dermis with 2 standard deviation variation."""
         return getColeCole(dermis_2std_dev.epsr_inf,
@@ -545,12 +533,12 @@ class Skin_2std(BaseMaterial3Layer):
 
 class CoatedSilicone(BaseMaterial3Layer):
     """Silicone-based material with coating."""
-    
+
     def __init__(self, f, epsr_1=1., epsr_2=3.5, sigma_1=0., sigma_2=0.,
                  d_1=2e-3, d_2=60e-6):
         """Initialize coated silicone material."""
         super().__init__(f, epsr_1, epsr_2, sigma_1, sigma_2, d_1, d_2)
-    
+
     def get_layer3_permittivity(self):
         """Layer 3: Type II silicone material."""
         return getColeCole(silicone_typeII.epsr_inf,
@@ -563,11 +551,11 @@ class CoatedSilicone(BaseMaterial3Layer):
 
 class Gabriel_Skin(BaseMaterial3Layer):
     """Skin model using Gabriel's model parameters (4-term Cole-Cole)."""
-    
+
     def get_layer2_permittivity(self):
         """Layer 2: Simple dielectric (not used in Gabriel model)."""
         return get_epsr_complex(3., 0., 2*np.pi*self.f) * epsilon_0
-    
+
     def get_layer3_permittivity(self):
         """Layer 3: Gabriel model with 4-term Cole-Cole expansion."""
         return getColeCole_5term(gabriel_model.epsr_inf,
@@ -589,17 +577,17 @@ class Gabriel_Skin(BaseMaterial3Layer):
 
 class Skin_Thick1(BaseMaterial3Layer):
     """Thick skin model variant 1 with thick_1 (layer 2) and dermis (layer 3)."""
-    
+
     def __init__(self, f, epsr_1=1., sigma_1=0., d_1=2e-3, d_2=227e-6):
         """Initialize thick skin model 1."""
         super().__init__(f, epsr_1, 0., sigma_1, 0., d_1, d_2)
-    
+
     def get_layer2_permittivity(self):
         """Layer 2: Thick skin variant 1."""
         return getColeCole(thick_1.epsr_inf, thick_1.sigma_0,
                           2*np.pi*self.f, thick_1.epsr_colecole,
                           thick_1.tau, thick_1.alpha)
-    
+
     def get_layer3_permittivity(self):
         """Layer 3: Dermis material (mean values)."""
         return getColeCole(dermis.epsr_inf, dermis.sigma_0,
@@ -609,17 +597,17 @@ class Skin_Thick1(BaseMaterial3Layer):
 
 class Skin_Thick3(BaseMaterial3Layer):
     """Thick skin model variant 3 with thick_3 (layer 2) and dermis 2-std (layer 3)."""
-    
+
     def __init__(self, f, epsr_1=1., sigma_1=0., d_1=2e-3, d_2=295e-6):
         """Initialize thick skin model 3."""
         super().__init__(f, epsr_1, 0., sigma_1, 0., d_1, d_2)
-    
+
     def get_layer2_permittivity(self):
         """Layer 2: Thick skin variant 3."""
         return getColeCole(thick_3.epsr_inf, thick_3.sigma_0,
                           2*np.pi*self.f, thick_3.epsr_colecole,
                           thick_3.tau, thick_3.alpha)
-    
+
     def get_layer3_permittivity(self):
         """Layer 3: Dermis with 2 standard deviation variation."""
         return getColeCole(dermis_2std_dev.epsr_inf,
@@ -636,7 +624,7 @@ class Skin_Thick3(BaseMaterial3Layer):
 
 class Phantom:
     """2-layer phantom material."""
-    
+
     def __init__(self, f, epsr_1=1.05, epsr_2=11.9, epsr_3=6.9,
                  sigma_1=0., sigma_2=0., sigma_3=1.95,
                  d_1=2e-3, d_2=1.08e-3):
@@ -651,26 +639,26 @@ class Phantom:
         self.d_2 = d_2
         self.calc_eps_complex(2*np.pi*f)
         self.calc_Z(2*np.pi*f)
-    
+
     def calc_k0(self, omega):
         """Calculate wave number in each layer."""
         self.k0_1 = get_k0(omega, self.epsr_1, self.sigma_1)
         self.k0_2 = get_k0(omega, self.epsr_2, self.sigma_2)
         self.k0_3 = get_k0(omega, self.epsr_3, self.sigma_3)
-    
+
     def calc_eps_complex(self, omega):
         """Calculate complex permittivity."""
         self.eps_c1 = get_epsr_complex(self.epsr_1, self.sigma_1, omega) * epsilon_0
         self.eps_c2 = get_epsr_complex(self.epsr_2, self.sigma_2, omega) * epsilon_0
         self.eps_c3 = get_epsr_complex(self.epsr_3, self.sigma_3, omega) * epsilon_0
-    
+
     def calc_kz(self, kxn, k0_air):
         """Calculate z-component of wave number."""
         kx = np.array([kxn*k for k in k0_air])
         self.kz_1 = get_kz(self.k0_1, kx)
         self.kz_2 = get_kz(self.k0_2, kx)
         self.kz_3 = get_kz(self.k0_3, kx)
-    
+
     def calc_Z(self, omega):
         """Calculate impedance."""
         self.calc_eps_complex(omega)
@@ -681,7 +669,7 @@ class Phantom:
 
 class Phantom_3layer(Phantom):
     """3-layer phantom material."""
-    
+
     def __init__(self, f, epsr_1=1.05, epsr_2=3.5, epsr_3=16., epsr_4=6.,
                  sigma_1=0., sigma_2=0., sigma_3=0., sigma_4=1.95,
                  d_1=2e-3, d_2=0.4e-3, d_3=1.08e-3):
@@ -699,21 +687,21 @@ class Phantom_3layer(Phantom):
         self.d_3 = d_3
         self.calc_eps_complex(2*np.pi*f)
         self.calc_Z(2*np.pi*f)
-    
+
     def calc_k0(self, omega):
         """Calculate wave number in each layer."""
         self.k0_1 = get_k0(omega, self.epsr_1, self.sigma_1)
         self.k0_2 = get_k0(omega, self.epsr_2, self.sigma_2)
         self.k0_3 = get_k0(omega, self.epsr_3, self.sigma_3)
         self.k0_4 = get_k0(omega, self.epsr_4, self.sigma_4)
-    
+
     def calc_eps_complex(self, omega):
         """Calculate complex permittivity."""
         self.eps_c1 = get_epsr_complex(self.epsr_1, self.sigma_1, omega) * epsilon_0
         self.eps_c2 = get_epsr_complex(self.epsr_2, self.sigma_2, omega) * epsilon_0
         self.eps_c3 = get_epsr_complex(self.epsr_3, self.sigma_3, omega) * epsilon_0
         self.eps_c4 = get_epsr_complex(self.epsr_4, self.sigma_4, omega) * epsilon_0
-    
+
     def calc_kz(self, kxn, k0_air):
         """Calculate z-component of wave number."""
         kx = np.array([kxn*k for k in k0_air])
@@ -721,7 +709,7 @@ class Phantom_3layer(Phantom):
         self.kz_2 = get_kz(self.k0_2, kx)
         self.kz_3 = get_kz(self.k0_3, kx)
         self.kz_4 = get_kz(self.k0_4, kx)
-    
+
     def calc_Z(self, omega):
         """Calculate impedance."""
         self.calc_eps_complex(omega)
@@ -733,7 +721,7 @@ class Phantom_3layer(Phantom):
 
 class Phantom_4layer(Phantom_3layer):
     """4-layer phantom material."""
-    
+
     def __init__(self, f, epsr_1=1.05, epsr_2=3.5, epsr_3=16., epsr_4=6.,
                  epsr_5=6., sigma_1=0., sigma_2=0., sigma_3=0.,
                  sigma_4=1.95, sigma_5=1.95,
@@ -755,7 +743,7 @@ class Phantom_4layer(Phantom_3layer):
         self.d_4 = d_4
         self.calc_eps_complex(2*np.pi*f)
         self.calc_Z(2*np.pi*f)
-    
+
     def calc_k0(self, omega):
         """Calculate wave number in each layer."""
         self.k0_1 = get_k0(omega, self.epsr_1, self.sigma_1)
@@ -763,7 +751,7 @@ class Phantom_4layer(Phantom_3layer):
         self.k0_3 = get_k0(omega, self.epsr_3, self.sigma_3)
         self.k0_4 = get_k0(omega, self.epsr_4, self.sigma_4)
         self.k0_5 = get_k0(omega, self.epsr_5, self.sigma_5)
-    
+
     def calc_eps_complex(self, omega):
         """Calculate complex permittivity."""
         self.eps_c1 = get_epsr_complex(self.epsr_1, self.sigma_1, omega) * epsilon_0
@@ -771,7 +759,7 @@ class Phantom_4layer(Phantom_3layer):
         self.eps_c3 = get_epsr_complex(self.epsr_3, self.sigma_3, omega) * epsilon_0
         self.eps_c4 = get_epsr_complex(self.epsr_4, self.sigma_4, omega) * epsilon_0
         self.eps_c5 = get_epsr_complex(self.epsr_5, self.sigma_5, omega) * epsilon_0
-    
+
     def calc_kz(self, kxn, k0_air):
         """Calculate z-component of wave number."""
         kx = np.array([kxn*k for k in k0_air])
@@ -780,7 +768,7 @@ class Phantom_4layer(Phantom_3layer):
         self.kz_3 = get_kz(self.k0_3, kx)
         self.kz_4 = get_kz(self.k0_4, kx)
         self.kz_5 = get_kz(self.k0_5, kx)
-    
+
     def calc_Z(self, omega):
         """Calculate impedance."""
         self.calc_eps_complex(omega)

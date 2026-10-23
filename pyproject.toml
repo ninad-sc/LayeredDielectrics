@@ -34,24 +34,24 @@ dependencies = [
 
 [project.optional-dependencies]
 gui = ["PyQt5>=5.15"]
+dev = ["pytest>=7", "build>=1"]
+
+[project.scripts]
+layered-dielectrics-summary = "layered_dielectrics.run_phantom_summary:main"
+layered-dielectrics-sensitivity = "layered_dielectrics.run_sensitivity:main"
+layered-dielectrics-penetration-depth = "layered_dielectrics.calculate_ssl_penetration_depth:main"
+layered-dielectrics-export-layers = "layered_dielectrics.export_phantom_layers:cli"
+layered-dielectrics-apd = "layered_dielectrics.plot_apd_vs_z:main"
+layered-dielectrics-ssl24 = "layered_dielectrics.plot_ssl24_comparison:main"
 
 [project.urls]
 Homepage = "https://github.com/ninad-sc/LayeredDielectrics"
 Repository = "https://github.com/ninad-sc/LayeredDielectrics.git"
 Issues = "https://github.com/ninad-sc/LayeredDielectrics/issues"
 
-[tool.setuptools]
-py-modules = [
-    "config",
-    "helpers",
-    "phantoms",
-    "broadband_phantom_summary",
-    "calculate_ssl_penetration_depth",
-    "export_phantom_layers",
-    "plot_apd_vs_z",
-    "plot_ssl24_comparison",
-    "run_phantom_summary",
-    "run_sensitivity",
-    "sensitivity",
-    "standard_compliant_sensitivity",
-]
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["layered_dielectrics*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
