@@ -148,7 +148,14 @@ def get_transfer_matrix_TE(k_z1, k_z2, d1):
 
 
 def get_transfer_matrix_TM(k_z1, k_z2, d1, eps_c1, eps_c2):
-    """Calculate transfer matrix for TM polarization."""
+    """Propagate TM Hy amplitudes from medium 1 to medium 2.
+
+    Continuity of Hy and Ex uses Ex = +/- kz*Hy/(omega*epsilon).
+    Thus q = (epsilon_2/epsilon_1)*(kz_1/kz_2) gives the interface
+    matrix [[1+q, 1-q], [1-q, 1+q]]/2. Forward waves use exp(-1j*kz*z)
+    with exp(+1j*omega*t). Reflection from get_R_T is Hy,r/Hy,i;
+    the reflection ratio of tangential Ex is its negative.
+    """
     t1 = np.array([1 + ((eps_c2[i]/eps_c1[i])*(k_z1[i,:]/k_z2[i,:])) for i in range(len(k_z1[:,0]))])
     t2 = np.array([1 - ((eps_c2[i]/eps_c1[i])*(k_z1[i,:]/k_z2[i,:])) for i in range(len(k_z1[:,0]))])
     T = 0.5*np.array([[t1*np.exp(-1j*k_z1*d1), t2*np.exp(1j*k_z1*d1)],

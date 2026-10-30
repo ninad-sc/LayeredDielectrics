@@ -103,6 +103,26 @@ Outputs:
 - Matching PDF and PNG files.
 - `output/tables/apd_vs_z_10_15_20_30_45GHz.csv`, containing the frequency, depth, layer indices, and normalized phantom/skin fluxes.
 
+## Skin reflection versus frequency
+
+```sh
+python plot_skin_reflection.py
+# Optionally override the incidence-angle variable for a single run:
+python plot_skin_reflection.py --angles 0 30 60 80
+```
+
+Edit `ANGLES_DEG` in `src/layered_dielectrics/plot_skin_reflection.py` to set
+the default incidence angles in degrees from the surface normal. The script
+converts them to `kxn = sin(theta)`; angles must satisfy 0 <= theta < 90 degrees.
+Edit `FREQUENCIES_GHZ` to change the default 10–45 GHz frequency grid.
+
+The plot shows the field reflection magnitude `abs(Gamma)` for TE (solid) and TM
+(dashed), with angle-colored patches and black polarization lines in the legend,
+using the existing `Skin_2std` model and its default layer thicknesses (air
+spacer, skin layer, semi-infinite dermis). Power reflectance is `abs(Gamma)**2`.
+Figures are saved as `output/plots/skin_reflection_vs_frequency.svg` and `.pdf`.
+The script also runs as `python -m layered_dielectrics.plot_skin_reflection`.
+
 ## Broadband reflection and APD summaries
 
 ```sh
